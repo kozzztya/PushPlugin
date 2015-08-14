@@ -1,5 +1,13 @@
 package com.plugin.gcm;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -79,6 +87,30 @@ public class GCMIntentService extends GCMBaseIntentService {
         }
 	}
 
+	public Bitmap getBitmapFromURL(String strURL) {
+    	try {
+        	URL url = new URL(strURL);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            Bitmap myBitmap = BitmapFactory.decodeStream(input);
+            return myBitmap;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+	private void setNotificationLargeIcon(Bundle extras, NotificationCompat.Builder mBuilder) {
+        String gcmLargeIcon = "https://dl0tgz6ee3upo.cloudfront.net/production/apps/icons/000/197/791/retina/c240c7e5a36752dd045500c3ee94344a.png";
+        if (gcmLargeIcon != null) {
+            if (gcmLargeIcon.startsWith("http://") || gcmLargeIcon.startsWith("https://")) {
+                mBuilder.setLargeIcon(getBitmapFromURL(gcmLargeIcon));
+            }
+        }
+    }
+
 	public void createNotification(Context context, Bundle extras)
 	{
 		NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -107,6 +139,8 @@ public class GCMIntentService extends GCMBaseIntentService {
 				.setTicker(extras.getString("title"))
 				.setContentIntent(contentIntent)
 				.setAutoCancel(true);
+
+		setNotificationLargeIcon(extras, mBuilder);
 
 		String message = extras.getString("message");
 		if (message != null) {
